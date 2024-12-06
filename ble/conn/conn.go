@@ -4,20 +4,21 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/currantlabs/ble"
-	"github.com/currantlabs/ble/linux"
 	"github.com/digital-dream-labs/vector-bluetooth/ble/blecrypto"
 	"github.com/pkg/errors"
+	"tinygo.org/x/bluetooth"
 )
+
+var DefaultAdapter = &bluetooth.Adapter{}
 
 // Connection is the configuration struct for ble connections
 type Connection struct {
-	device      ble.Device
+	device      *bluetooth.Adapter
 	scanresults *scan
-	connection  ble.Client
-	reader      *ble.Characteristic
-	writer      *ble.Characteristic
-	profile     *ble.Profile
+	connection  bluetooth.Device
+	services    []bluetooth.DeviceService
+	reader      *bluetooth.DeviceCharacteristic
+	writer      *bluetooth.DeviceCharacteristic
 	incoming    chan []byte
 	out         chan []byte
 	crypto      *blecrypto.BLECrypto
@@ -25,24 +26,31 @@ type Connection struct {
 	established lockState
 	connected   lockState
 	encrypted   lockState
+	connParams  bluetooth.ConnectionParams
 }
 
 // New returns a connection, or an error on failure
 func New(output chan []byte) (*Connection, error) {
 	rand.Seed(time.Now().UnixNano())
 
+	// Initialize the default adapter
+	DefaultAdapter = bluetooth.DefaultAdapter
+	if err := DefaultAdapter.Enable(); err != nil {
+		return nil, errors.Wrap(err, "can't enable default adapter")
+	}
+
 	c := Connection{
+		device:      DefaultAdapter,
 		scanresults: newScan(),
 		incoming:    make(chan []byte),
 		out:         output,
 		crypto:      blecrypto.New(),
+		connParams: bluetooth.ConnectionParams{
+			ConnectionTimeout: 0, // default
+			MinInterval:       0, // default
+			MaxInterval:       0, // default
+		},
 	}
-
-	d, err := linux.NewDevice()
-	if err != nil {
-		return nil, errors.Wrap(err, "can't add new device")
-	}
-	c.device = d
 
 	return &c, nil
 }

@@ -26,6 +26,7 @@ func (c *Connection) Send(buf []byte) error {
 
 		switch {
 		case remaining == size:
+			// first chunk
 			msgSize := maxSize - 1
 			if err := c.messageWithHeader(msgStart, buf[offset:offset+msgSize], msgSize); err != nil {
 				return err
@@ -33,12 +34,14 @@ func (c *Connection) Send(buf []byte) error {
 			remaining -= msgSize
 
 		case remaining < maxSize:
+			// last chunk
 			if err := c.messageWithHeader(msgEnd, buf[offset:], remaining); err != nil {
 				return err
 			}
 			remaining = 0
 
 		default:
+			// middle chunk
 			msgSize := maxSize - 1
 			if err := c.messageWithHeader(msgContinue, buf[offset:offset+msgSize], msgSize); err != nil {
 				return err
@@ -58,14 +61,13 @@ func (c *Connection) messageWithHeader(multipart byte, buffer []byte, size int) 
 }
 
 func (c *Connection) rawMessage(buffer []byte) error {
-	return c.connection.WriteCharacteristic(
-		c.reader,
-		buffer,
-		true,
-	)
+	if c.reader == nil {
+		return nil
+	}
+	_, err := c.reader.WriteWithoutResponse(buffer)
+	return err
 }
 
 func getHeaderByte(multipart byte, size int) byte {
-	//nolint
-	return byte(((int(multipart) << 6) | (size & -193)))
+	return byte(((int(multipart) << 6) | (size & 0x3F)))
 }

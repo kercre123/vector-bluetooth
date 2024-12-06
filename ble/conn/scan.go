@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/currantlabs/ble"
+	"tinygo.org/x/bluetooth"
 )
 
 const (
@@ -25,23 +25,29 @@ type Device struct {
 
 // Scan looks for BLE devices matching the vector requirements
 func (c *Connection) Scan() (*ScanResponse, error) {
-	ctx := ble.WithSigHandler(
-		context.WithTimeout(
-			context.Background(),
-			scanDuration,
-		),
-	)
+	ctx, cancel := context.WithTimeout(context.Background(), scanDuration)
+	defer cancel()
 
-	// This error is intentionally ignored.  If you were to do something with it,
-	// you'd get a deadline exceeded message every time.
-	_ = c.device.Scan(
-		ctx,
-		false,
-		c.scan,
-	)
+	done := make(chan struct{})
+	var scanErr error
+	go func() {
+		scanErr = c.device.Scan(func(adapter *bluetooth.Adapter, result bluetooth.ScanResult) {
+			c.scan(result)
+		})
+		close(done)
+	}()
+
+	// Wait for the context to finish (timeout)
+	<-ctx.Done()
+
+	_ = c.device.StopScan() // This will cause the scan to stop and the goroutine to exit.
+	<-done
+
+	if scanErr != nil {
+		return nil, scanErr
+	}
 
 	d := []*Device{}
-
 	for k, v := range c.scanresults.getresults() {
 		td := Device{
 			ID:      k,

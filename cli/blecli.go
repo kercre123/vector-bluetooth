@@ -70,6 +70,8 @@ func BLEShell() {
 			c.cancelOTA()
 		case "logs":
 			c.logs()
+		case "disconnect":
+			c.v.Close()
 		default:
 			help()
 		}

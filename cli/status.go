@@ -18,6 +18,7 @@ func (c *conf) getStatus() {
 	}
 
 	data, err := json.MarshalIndent(resp, "", "  ")
+	fmt.Println(data)
 	if err != nil {
 		log.Println("unable to get status: ", err)
 		return

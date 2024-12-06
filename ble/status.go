@@ -48,6 +48,7 @@ func (v *VectorBLE) GetStatus() (*StatusResponse, error) {
 	b, err := v.watch()
 
 	resp := StatusResponse{}
+
 	if err := resp.Unmarshal(b); err != nil {
 		return nil, err
 	}

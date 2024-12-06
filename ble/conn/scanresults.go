@@ -3,20 +3,14 @@ package conn
 import (
 	"sync"
 
-	"github.com/currantlabs/ble"
+	"tinygo.org/x/bluetooth"
 )
-
-func (c *Connection) scan(d ble.Advertisement) {
-	if d.Connectable() {
-		c.scanresults.put(d)
-	}
-}
 
 const vectorservice = "fee3"
 
 type result struct {
 	name string
-	addr ble.Addr
+	addr *bluetooth.Address
 }
 
 type scan struct {
@@ -32,20 +26,19 @@ func newScan() *scan {
 	return &m
 }
 
-func (m *scan) put(value ble.Advertisement) {
-	// there's a race condition in the ble code triggered when value.Services()
-	// is called, and it appears to be in all libraries based on currantlabs/ble.  sigh.
-	for _, s := range value.Services() {
-		if s.String() == vectorservice {
-			// dedup
-			r := m.getresults()
-			for _, v := range r {
-				if value.Address().String() == v.addr.String() {
-					return
-				}
+func (c *Connection) scan(d bluetooth.ScanResult) {
+	if d.HasServiceUUID(mustParseShortUUID(vectorservice)) {
+		// dedup
+		r := c.scanresults.getresults()
+		for _, v := range r {
+			if d.Address.String() == v.addr.String() {
+				return
 			}
-			m.results.Store(m.mutexCounter.getCount(), value)
 		}
+		c.scanresults.results.Store(c.scanresults.mutexCounter.getCount(), result{
+			name: d.LocalName(),
+			addr: &d.Address,
+		})
 	}
 }
 
@@ -53,23 +46,21 @@ func (m *scan) getresults() map[int]result {
 	tm := map[int]result{}
 	m.results.Range(
 		func(key, value interface{}) bool {
-			adv := value.(ble.Advertisement)
-			tm[key.(int)] = result{
-				name: adv.LocalName(),
-				addr: adv.Address(),
-			}
+			r := value.(result)
+			tm[key.(int)] = r
 			return true
 		},
 	)
 	return tm
 }
 
-func (m *scan) getresult(id int) ble.Addr {
+func (m *scan) getresult(id int) *bluetooth.Address {
 	v, ok := m.results.Load(id)
 	if !ok {
 		return nil
 	}
-	return v.(ble.Advertisement).Address()
+	r := v.(result)
+	return r.addr
 }
 
 type mCounter struct {
@@ -90,4 +81,21 @@ func (m *mCounter) getCount() int {
 	m.count++
 	m.m.Unlock()
 	return r
+}
+
+func mustParseShortUUID(short string) bluetooth.UUID {
+	var val uint16
+	for i := 0; i < len(short); i++ {
+		val <<= 4
+		b := short[i]
+		switch {
+		case b >= '0' && b <= '9':
+			val |= uint16(b - '0')
+		case b >= 'a' && b <= 'f':
+			val |= uint16(b-'a') + 10
+		case b >= 'A' && b <= 'F':
+			val |= uint16(b-'A') + 10
+		}
+	}
+	return bluetooth.New16BitUUID(val)
 }

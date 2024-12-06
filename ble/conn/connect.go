@@ -2,11 +2,12 @@ package conn
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"time"
 
-	"github.com/currantlabs/ble"
 	"github.com/pkg/errors"
+	"tinygo.org/x/bluetooth"
 )
 
 const (
@@ -16,6 +17,8 @@ const (
 	retryCount = 3
 	offset     = 1
 )
+
+var blebuf bleBuffer
 
 // Connect connects to a specific device
 func (c *Connection) Connect(id int) error {
@@ -36,7 +39,6 @@ func (c *Connection) Connect(id int) error {
 	}
 
 	errCh := make(chan error)
-
 	go c.subscribe(errCh)
 	err := <-errCh
 	if err != nil {
@@ -50,84 +52,104 @@ func (c *Connection) Connect(id int) error {
 
 // bleConnect handles establishing the actual connection
 func (c *Connection) bleConnect(id int) error {
-	ctx := ble.WithSigHandler(
-		context.WithTimeout(
-			context.Background(),
-			scanDuration*duration,
-		),
-	)
+	_, cancel := context.WithTimeout(context.Background(), scanDuration*duration)
+	defer cancel()
 
-	cln, err := c.device.Dial(
-		ctx,
-		c.scanresults.getresult(id),
-	)
+	addr := c.scanresults.getresult(id)
+	if addr == nil {
+		return errors.New("no device found with that ID")
+	}
+
+	// Connect to the device
+	DefaultAdapter = bluetooth.DefaultAdapter
+	dev, err := DefaultAdapter.Connect(*addr, c.connParams)
 	if err != nil {
 		return err
 	}
 
-	c.connection = cln
-
+	c.connection = dev
 	return nil
 }
 
-// discoverPRofile finds the device profile and sets it
-func (c *Connection) discoverProfile() error {
-	p, err := c.connection.DiscoverProfile(false)
+func ParseUUID(s string) (bluetooth.UUID, error) {
+	uuid, err := bluetooth.ParseUUID(s)
 	if err != nil {
-		return errors.Wrap(err, "can't discover profile")
+		return bluetooth.UUID{}, err
 	}
-	c.profile = p
+	return uuid, nil
+}
+
+// discoverProfile finds the device services and characteristics
+func (c *Connection) discoverProfile() error {
+	services, err := c.connection.DiscoverServices(nil)
+	if err != nil {
+		return errors.Wrap(err, "can't discover services")
+	}
+	c.services = services
 	return nil
 }
 
-// findWriter configures the writer
+// findWriter configures the writer characteristic
 func (c *Connection) findWriter() error {
-	wr := c.profile.Find(
-		ble.NewCharacteristic(
-			c.writeUUID(),
-		),
-	)
-	if wr == nil {
-		return errors.New("cannot find write channel")
+	wUUID, err := ParseUUID(writeUUID)
+	if err != nil {
+		return errors.Wrap(err, "invalid writer UUID")
 	}
-	c.writer = wr.(*ble.Characteristic)
 
-	return nil
+	for _, svc := range c.services {
+		chars, err := svc.DiscoverCharacteristics(nil)
+		if err != nil {
+			continue
+		}
+		for i := range chars {
+			if chars[i].UUID().String() == wUUID.String() {
+				c.writer = &chars[i]
+				return nil
+			}
+		}
+	}
+	return errors.New("cannot find write channel")
 }
 
-// findReader configures the reader
+// findReader configures the reader characteristic
 func (c *Connection) findReader() error {
-	wr := c.profile.Find(
-		ble.NewCharacteristic(
-			c.readUUID(),
-		),
-	)
-	if wr == nil {
-		return errors.New("cannot find read channel")
+	rUUID, err := ParseUUID(readUUID)
+	if err != nil {
+		return errors.Wrap(err, "invalid reader UUID")
 	}
-	c.reader = wr.(*ble.Characteristic)
 
-	return nil
+	for _, svc := range c.services {
+		chars, err := svc.DiscoverCharacteristics(nil)
+		if err != nil {
+			continue
+		}
+		for i := range chars {
+			if chars[i].UUID().String() == rUUID.String() {
+				c.reader = &chars[i]
+				return nil
+			}
+		}
+	}
+	return errors.New("cannot find read channel")
 }
 
 // subscribe pipes incoming data to a reader chan
 func (c *Connection) subscribe(errChan chan error) {
-	if err := c.connection.Subscribe(
-		c.writer,
-		true,
-		func(req []byte) {
-			c.incoming <- req
-		},
-	); err != nil {
-		errChan <- err
+	if c.writer == nil {
+		errChan <- errors.New("writer characteristic not found")
+		return
 	}
-	errChan <- nil
+
+	// writer/reader are deceiving!
+
+	err := c.writer.EnableNotifications(func(buf []byte) {
+		c.incoming <- buf
+	})
+	errChan <- err
 }
 
 func (c *Connection) handleIncoming() {
-	blebuf := bleBuffer{}
-	for {
-		incoming := <-c.incoming
+	for incoming := range c.incoming {
 		b := blebuf.receiveRawBuffer(incoming)
 		if b == nil {
 			continue
@@ -138,8 +160,10 @@ func (c *Connection) handleIncoming() {
 		case !c.encrypted.Enabled() && c.connected.Enabled():
 			c.out <- b
 		case c.encrypted.Enabled() && c.connected.Enabled():
-			buf, _ := c.crypto.DecryptMessage(b)
-			// IDEA:  should this reset everything?
+			buf, err := c.crypto.DecryptMessage(b)
+			if err != nil {
+				fmt.Println("ERROR", err)
+			}
 			c.out <- buf
 		default:
 			c.established.Disable()
@@ -148,19 +172,10 @@ func (c *Connection) handleIncoming() {
 	}
 }
 
-func (c *Connection) readUUID() ble.UUID {
-	return ble.MustParse(readUUID)
-}
-
-func (c *Connection) writeUUID() ble.UUID {
-	return ble.MustParse(writeUUID)
-}
-
 func (c *Connection) handleConnectionRequest(buffer []byte) {
 	if err := c.rawMessage(buffer); err != nil {
 		return
 	}
-
 	c.connected.Enable()
 	c.version = int(buffer[2])
 }
@@ -169,10 +184,8 @@ func retry(attempts int, sleep time.Duration, f func() error) error {
 	if err := f(); err != nil {
 		attempts--
 		if attempts > 0 {
-			//nolint -- we definitely don't need cryptographically secure numbers for jitter
 			jitter := time.Duration(rand.Int63n(int64(sleep)))
 			sleep += jitter / offset
-
 			time.Sleep(sleep)
 			return retry(attempts, offset*sleep, f)
 		}

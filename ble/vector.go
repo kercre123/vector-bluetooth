@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	bleBuffer = 5
+	bleBufferS = 5
 )
 
 // VectorBLE contains the information required to connect, etc
@@ -52,7 +52,7 @@ func New(opts ...Option) (*VectorBLE, error) {
 		opt(&cfg)
 	}
 
-	bleReader := make(chan []byte, bleBuffer)
+	bleReader := make(chan []byte, bleBufferS)
 
 	b, err := conn.New(bleReader)
 	if err != nil {

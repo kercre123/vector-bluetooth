@@ -5,7 +5,8 @@ func (c *Connection) Close() error {
 	c.connected.Disable()
 	c.encrypted.Disable()
 	c.established.Disable()
-	return c.device.Stop()
+	c.connection.Disconnect()
+	return nil
 }
 
 // Reset clears all connection information

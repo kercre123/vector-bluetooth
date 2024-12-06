@@ -32,9 +32,6 @@ func (v *VectorBLE) OTAStart(url string) (*OTAStartResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
 
 	if err := v.ble.Send(msg); err != nil {
 		return nil, err
