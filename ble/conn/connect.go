@@ -60,9 +60,7 @@ func (c *Connection) bleConnect(id int) error {
 		return errors.New("no device found with that ID")
 	}
 
-	// Connect to the device
-	DefaultAdapter = bluetooth.DefaultAdapter
-	dev, err := DefaultAdapter.Connect(*addr, c.connParams)
+	dev, err := bluetooth.DefaultAdapter.Connect(*addr, c.connParams)
 	if err != nil {
 		return err
 	}
@@ -150,6 +148,9 @@ func (c *Connection) subscribe(errChan chan error) {
 
 func (c *Connection) handleIncoming() {
 	for incoming := range c.incoming {
+		if incoming == nil {
+			continue
+		}
 		b := blebuf.receiveRawBuffer(incoming)
 		if b == nil {
 			continue

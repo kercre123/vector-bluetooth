@@ -4,9 +4,7 @@ package blecrypto
 // #include <stdlib.h>
 // #include <sodium.h>
 import "C"
-import (
-	"errors"
-)
+import "errors"
 
 const (
 	aBytes int = C.crypto_aead_xchacha20poly1305_ietf_ABYTES // Size of an authentication tag in bytes

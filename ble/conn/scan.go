@@ -37,10 +37,9 @@ func (c *Connection) Scan() (*ScanResponse, error) {
 		close(done)
 	}()
 
-	// Wait for the context to finish (timeout)
 	<-ctx.Done()
 
-	_ = c.device.StopScan() // This will cause the scan to stop and the goroutine to exit.
+	_ = c.device.StopScan()
 	<-done
 
 	if scanErr != nil {
