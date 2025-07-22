@@ -8,5 +8,5 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/schollz/progressbar/v3 v3.7.4
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	tinygo.org/x/bluetooth v0.10.0
+	tinygo.org/x/bluetooth v0.12.0
 )

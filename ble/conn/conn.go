@@ -46,9 +46,10 @@ func New(output chan []byte) (*Connection, error) {
 		out:         output,
 		crypto:      blecrypto.New(),
 		connParams: bluetooth.ConnectionParams{
-			ConnectionTimeout: bluetooth.NewDuration(time.Second * 3), // default
-			MinInterval:       0,                                      // default
-			MaxInterval:       0,                                      // default
+			ConnectionTimeout: bluetooth.NewDuration(time.Second * 1000), // default
+			MinInterval:       0,                                         // default
+			MaxInterval:       0,                                         // default
+			Timeout:           bluetooth.NewDuration(time.Second * 1000),
 		},
 	}
 

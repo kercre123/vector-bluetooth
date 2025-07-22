@@ -1,5 +1,7 @@
 package conn
 
+import "fmt"
+
 const (
 	sizeBits = 0b00111111
 
@@ -21,6 +23,8 @@ func (b *bleBuffer) receiveRawBuffer(buf []byte) []byte {
 	multipartState := getMultipartBits(headerByte)
 
 	if int(sizeByte) != len(buf)-1 {
+		fmt.Println("THROWING OUT BAD THING, length of", len(buf)-1, "expected", int(sizeByte))
+		b.Buf = nil
 		return nil
 	}
 
@@ -42,11 +46,12 @@ func (b *bleBuffer) receiveRawBuffer(buf []byte) []byte {
 		return t
 
 	case msgSolo:
+		b.Buf = []byte{}
 		b.append(buf, int(sizeByte))
 		b.State = msgStart
-		t := b.Buf
-		b.Buf = []byte{}
-		return t
+		full := b.Buf
+		b.Buf = nil
+		return full
 	}
 
 	return nil

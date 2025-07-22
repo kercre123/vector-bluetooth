@@ -4,7 +4,10 @@ package blecrypto
 // #include <stdlib.h>
 // #include <sodium.h>
 import "C"
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	aBytes int = C.crypto_aead_xchacha20poly1305_ietf_ABYTES // Size of an authentication tag in bytes
@@ -13,6 +16,7 @@ const (
 // DecryptMessage decrypts an incoming message
 func (b *BLECrypto) DecryptMessage(msg []byte) ([]byte, error) {
 	m := make([]byte, len(msg)-aBytes)
+	fmt.Println(msg)
 
 	exit := C.crypto_aead_xchacha20poly1305_ietf_decrypt(
 		(*C.uchar)(bytePointer(m)),
@@ -25,10 +29,11 @@ func (b *BLECrypto) DecryptMessage(msg []byte) ([]byte, error) {
 		(*C.uchar)(&b.decryptionNonce[0]),
 		(*C.uchar)(&b.decrypt[0]))
 
+	b.nextDecryptNonce()
 	if exit != 0 {
+		fmt.Println(exit)
 		return nil, errors.New("verification failed")
 	}
 
-	b.nextDecryptNonce()
 	return m, nil
 }
