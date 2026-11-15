@@ -1,8 +1,8 @@
 package ble
 
 import (
-	"github.com/digital-dream-labs/vector-bluetooth/ble/conn"
-	"github.com/digital-dream-labs/vector-bluetooth/rts"
+	"github.com/kercre123/vector-bluetooth/ble/conn"
+	"github.com/kercre123/vector-bluetooth/rts"
 )
 
 const (

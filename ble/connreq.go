@@ -1,7 +1,7 @@
 package ble
 
 import (
-	"github.com/digital-dream-labs/vector-bluetooth/rts"
+	"github.com/kercre123/vector-bluetooth/rts"
 )
 
 func handleRtsConnRequest(v *VectorBLE, msg interface{}) (data []byte, cont bool, err error) {

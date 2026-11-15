@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/digital-dream-labs/vector-bluetooth/ble/blecrypto"
+	"github.com/kercre123/vector-bluetooth/ble/blecrypto"
 	"github.com/pkg/errors"
 	"tinygo.org/x/bluetooth"
 )

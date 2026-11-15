@@ -6,7 +6,7 @@ package blecrypto
 import "C"
 
 import (
-	"github.com/digital-dream-labs/vector-bluetooth/rts"
+	"github.com/kercre123/vector-bluetooth/rts"
 )
 
 var (

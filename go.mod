@@ -1,4 +1,4 @@
-module github.com/digital-dream-labs/vector-bluetooth
+module github.com/kercre123/vector-bluetooth
 
 go 1.22
 

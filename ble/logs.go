@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/digital-dream-labs/vector-bluetooth/rts"
+	"github.com/kercre123/vector-bluetooth/rts"
 )
 
 // LogResponse is the unified response for log downloading

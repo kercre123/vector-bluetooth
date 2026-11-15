@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/digital-dream-labs/vector-bluetooth/rts"
+	"github.com/kercre123/vector-bluetooth/rts"
 )
 
 // OTAStartResponse is the unified response for ota start messages

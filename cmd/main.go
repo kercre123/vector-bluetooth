@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/digital-dream-labs/vector-bluetooth/cli"
+	"github.com/kercre123/vector-bluetooth/cli"
 )
 
 func main() {

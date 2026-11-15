@@ -10,7 +10,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/digital-dream-labs/vector-bluetooth/clad"
+	"github.com/kercre123/vector-bluetooth/clad"
 )
 
 // ENUM RtsMode

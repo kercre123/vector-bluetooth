@@ -1,6 +1,6 @@
 package conn
 
-import "github.com/digital-dream-labs/vector-bluetooth/rts"
+import "github.com/kercre123/vector-bluetooth/rts"
 
 // SetRemotePublicKey sets the remote public key
 func (c *Connection) SetRemotePublicKey(msg *rts.RtsConnRequest) error {

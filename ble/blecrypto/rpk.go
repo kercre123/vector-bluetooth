@@ -1,7 +1,7 @@
 package blecrypto
 
 import (
-	"github.com/digital-dream-labs/vector-bluetooth/rts"
+	"github.com/kercre123/vector-bluetooth/rts"
 	"github.com/jamesruan/sodium"
 )
 

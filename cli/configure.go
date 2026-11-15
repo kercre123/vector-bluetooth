@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/digital-dream-labs/vector-bluetooth/ble"
+	"github.com/kercre123/vector-bluetooth/ble"
 )
 
 func (c *conf) configure() {

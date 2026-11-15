@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/digital-dream-labs/vector-bluetooth/rts"
+	"github.com/kercre123/vector-bluetooth/rts"
 )
 
 // WifiIPResponse is the unified response for wifi ip messages
