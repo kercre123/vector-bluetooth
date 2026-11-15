@@ -23,28 +23,28 @@ func (c *conf) configure() {
 	for {
 		fmt.Print("Enter your timezone: ")
 		text, _ := reader.ReadString('\n')
-		v.Timezone = strings.ReplaceAll(text, "\n", "")
+		v.Timezone = strings.TrimSpace(text)
 		break
 	}
 
 	for {
 		fmt.Print("Enter your default location (ie: San Francisco, California, United States): ")
 		text, _ := reader.ReadString('\n')
-		v.DefaultLocation = strings.ReplaceAll(text, "\n", "")
+		v.DefaultLocation = strings.TrimSpace(text)
 		break
 	}
 
 	for {
 		fmt.Print("Enter your locale: ")
 		text, _ := reader.ReadString('\n')
-		v.Locale = strings.ReplaceAll(text, "\n", "")
+		v.Locale = strings.TrimSpace(text)
 		break
 	}
 
 	for {
 		fmt.Print("Would you like to send data analytics to DDL (true|false): ")
 		text, _ := reader.ReadString('\n')
-		b, err := strconv.ParseBool(strings.ReplaceAll(text, "\n", ""))
+		b, err := strconv.ParseBool(strings.TrimSpace(text))
 		if err != nil {
 			fmt.Println(err)
 			continue
@@ -56,7 +56,7 @@ func (c *conf) configure() {
 	for {
 		fmt.Print("Would you like distance to be measured in metric units (true|false): ")
 		text, _ := reader.ReadString('\n')
-		b, err := strconv.ParseBool(strings.ReplaceAll(text, "\n", ""))
+		b, err := strconv.ParseBool(strings.TrimSpace(text))
 		if err != nil {
 			continue
 		}
@@ -67,7 +67,7 @@ func (c *conf) configure() {
 	for {
 		fmt.Print("Would you like temperature to be measured in metric units (true|false): ")
 		text, _ := reader.ReadString('\n')
-		b, err := strconv.ParseBool(strings.ReplaceAll(text, "\n", ""))
+		b, err := strconv.ParseBool(strings.TrimSpace(text))
 		if err != nil {
 			continue
 		}
@@ -78,7 +78,7 @@ func (c *conf) configure() {
 	for {
 		fmt.Print("Would you like to enable alexa support? (true|false): ")
 		text, _ := reader.ReadString('\n')
-		b, err := strconv.ParseBool(strings.ReplaceAll(text, "\n", ""))
+		b, err := strconv.ParseBool(strings.TrimSpace(text))
 		if err != nil {
 			continue
 		}
@@ -90,7 +90,7 @@ func (c *conf) configure() {
 		for {
 			fmt.Print("Would you like the button to activate alexa? (true|false): ")
 			text, _ := reader.ReadString('\n')
-			b, err := strconv.ParseBool(strings.ReplaceAll(text, "\n", ""))
+			b, err := strconv.ParseBool(strings.TrimSpace(text))
 			if err != nil {
 				continue
 			}
@@ -102,7 +102,7 @@ func (c *conf) configure() {
 	for {
 		fmt.Print("Would you like your clock to be displayed in 24 hour format? (true|false): ")
 		text, _ := reader.ReadString('\n')
-		b, err := strconv.ParseBool(strings.ReplaceAll(text, "\n", ""))
+		b, err := strconv.ParseBool(strings.TrimSpace(text))
 		if err != nil {
 			continue
 		}

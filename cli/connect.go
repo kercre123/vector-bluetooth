@@ -39,7 +39,7 @@ func (c *conf) vectorConnect(args []string) {
 	for {
 		fmt.Print("-> ")
 		text, _ := reader.ReadString('\n')
-		pin = strings.ReplaceAll(text, "\n", "")
+		pin = strings.TrimSpace(text)
 		break
 	}
 

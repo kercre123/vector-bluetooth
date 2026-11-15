@@ -1,8 +1,11 @@
 package ble
 
+import "strings"
+
 // SendPin sends the pin and finishes the key exchange
 func (v *VectorBLE) SendPin(pin string) error {
-	if err := v.ble.SetPin(pin); err != nil {
+	// windows...
+	if err := v.ble.SetPin(strings.TrimSpace(pin)); err != nil {
 		return err
 	}
 
