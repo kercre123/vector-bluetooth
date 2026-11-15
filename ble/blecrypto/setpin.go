@@ -1,14 +1,10 @@
 package blecrypto
 
-// #cgo pkg-config: libsodium
-// #include <stdlib.h>
-// #include <sodium.h>
-import (
-	"C"
-)
-
 import (
 	"errors"
+
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/curve25519"
 )
 
 const (
@@ -17,44 +13,42 @@ const (
 
 // SetPin configures the hashes based on the pin entered
 func (b *BLECrypto) SetPin(pin string) error {
-	if b.remotePublicKey.Bytes == nil {
+	if b.remotePublicKey == nil {
 		return errors.New("remote public key is not set")
 	}
 
-	k, err := b.keys.ClientSessionKeys(b.remotePublicKey)
+	rx, tx, err := b.clientSessionKeys()
 	if err != nil {
 		return err
 	}
-	b.decrypt = genHash(k.Rx.Bytes, []byte(pin))
-	b.encrypt = genHash(k.Tx.Bytes, []byte(pin))
-	return nil
+	b.decrypt, err = genHash(rx, []byte(pin))
+	if err != nil {
+		return err
+	}
+	b.encrypt, err = genHash(tx, []byte(pin))
+	return err
 }
 
-func genHash(key, pin []byte) [32]byte {
-	h, _ := sodiumGenerichash(keysize, key, pin)
+func (b *BLECrypto) clientSessionKeys() (rx, tx []byte, err error) {
+	q, err := curve25519.X25519(b.secretKey[:], b.remotePublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	in := make([]byte, 0, 3*keysize)
+	in = append(in, q...)
+	in = append(in, b.publicKey[:]...)
+	in = append(in, b.remotePublicKey...)
+	k := blake2b.Sum512(in)
+	return k[:keysize], k[keysize:], nil
+}
+
+func genHash(key, pin []byte) ([32]byte, error) {
 	rv := [32]byte{}
-	for k, v := range h {
-		rv[k] = v
+	h, err := blake2b.New(keysize, pin)
+	if err != nil {
+		return rv, err
 	}
-	return rv
-}
-
-func sodiumGenerichash(outlen int, in, key []byte) (hash []byte, bytes int) {
-	hash = make([]byte, outlen)
-	exit := int(C.crypto_generichash(
-		(*C.uchar)(&hash[0]),
-		C.size_t(outlen),
-		(*C.uchar)(bytePointer(in)),
-		C.ulonglong(len(in)),
-		(*C.uchar)(bytePointer(key)),
-		C.size_t(len(key))))
-
-	return hash, exit
-}
-
-func bytePointer(b []byte) *uint8 {
-	if len(b) > 0 {
-		return &b[0]
-	}
-	return nil
+	h.Write(key)
+	copy(rv[:], h.Sum(nil))
+	return rv, nil
 }

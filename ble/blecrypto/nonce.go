@@ -1,16 +1,7 @@
 package blecrypto
 
-// #cgo pkg-config: libsodium
-// #include <stdlib.h>
-// #include <sodium.h>
-import "C"
-
 import (
 	"github.com/kercre123/vector-bluetooth/rts"
-)
-
-var (
-	cryptoSecretBoxNonceBytes = int(C.crypto_secretbox_noncebytes())
 )
 
 // SetNonces populates the nonces
@@ -21,15 +12,18 @@ func (b *BLECrypto) SetNonces(msg *rts.RtsNonceMessage) error {
 }
 
 func (b *BLECrypto) nextEncryptNonce() {
-	C.sodium_increment(
-		(*C.uchar)(&b.encryptionNonce[0]),
-		C.size_t(cryptoSecretBoxNonceBytes),
-	)
+	increment(b.encryptionNonce[:])
 }
 
 func (b *BLECrypto) nextDecryptNonce() {
-	C.sodium_increment(
-		(*C.uchar)(&b.decryptionNonce[0]),
-		C.size_t(cryptoSecretBoxNonceBytes),
-	)
+	increment(b.decryptionNonce[:])
+}
+
+func increment(n []byte) {
+	c := uint16(1)
+	for i := range n {
+		c += uint16(n[i])
+		n[i] = byte(c)
+		c >>= 8
+	}
 }
