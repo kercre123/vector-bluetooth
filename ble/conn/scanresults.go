@@ -1,6 +1,7 @@
 package conn
 
 import (
+	"strings"
 	"sync"
 
 	"tinygo.org/x/bluetooth"
@@ -26,8 +27,31 @@ func newScan() *scan {
 	return &m
 }
 
-func (c *Connection) scan(d bluetooth.ScanResult) {
+// windows doesn't give us service uuids, so match the name too
+func isVector(d bluetooth.ScanResult) bool {
 	if d.HasServiceUUID(mustParseShortUUID(vectorservice)) {
+		return true
+	}
+	return isVectorName(d.LocalName())
+}
+
+// "Vector U1R7" yes, "Vector Cube" no
+func isVectorName(name string) bool {
+	suffix, ok := strings.CutPrefix(name, "Vector ")
+	if !ok || len(suffix) != 4 {
+		return false
+	}
+	for i := 0; i < len(suffix); i++ {
+		b := suffix[i]
+		if !(b >= 'A' && b <= 'Z') && !(b >= '0' && b <= '9') {
+			return false
+		}
+	}
+	return true
+}
+
+func (c *Connection) scan(d bluetooth.ScanResult) {
+	if isVector(d) {
 		// dedup
 		r := c.scanresults.getresults()
 		for _, v := range r {

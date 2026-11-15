@@ -39,8 +39,16 @@ func (c *Connection) Scan() (*ScanResponse, error) {
 
 	<-ctx.Done()
 
-	_ = c.device.StopScan()
+	// stopscan errors if the scan goroutine hasn't actually started yet, so keep poking it
+	for c.device.StopScan() != nil {
+		select {
+		case <-done:
+			goto stopped
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
 	<-done
+stopped:
 
 	if scanErr != nil {
 		return nil, scanErr

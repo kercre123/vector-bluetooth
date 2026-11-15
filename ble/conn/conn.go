@@ -2,6 +2,7 @@ package conn
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/kercre123/vector-bluetooth/ble/blecrypto"
@@ -10,6 +11,19 @@ import (
 )
 
 var DefaultAdapter = &bluetooth.Adapter{}
+
+var (
+	enableOnce sync.Once
+	enableErr  error
+)
+
+// darwin's Enable can only ever be called once per process
+func enableAdapter() error {
+	enableOnce.Do(func() {
+		enableErr = bluetooth.DefaultAdapter.Enable()
+	})
+	return enableErr
+}
 
 // Connection is the configuration struct for ble connections
 type Connection struct {
@@ -36,7 +50,7 @@ func New(output chan []byte) (*Connection, error) {
 
 	// Initialize the default adapter
 	DefaultAdapter = bluetooth.DefaultAdapter
-	if err := DefaultAdapter.Enable(); err != nil {
+	if err := enableAdapter(); err != nil {
 		return nil, errors.Wrap(err, "can't enable default adapter")
 	}
 
