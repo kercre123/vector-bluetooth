@@ -131,21 +131,6 @@ func (c *Connection) findReader() error {
 	return errors.New("cannot find read channel")
 }
 
-// subscribe pipes incoming data to a reader chan
-func (c *Connection) subscribe(errChan chan error) {
-	if c.writer == nil {
-		errChan <- errors.New("writer characteristic not found")
-		return
-	}
-
-	// writer/reader are deceiving!
-
-	err := c.writer.EnableNotifications(func(buf []byte) {
-		c.incoming <- buf
-	})
-	errChan <- err
-}
-
 func (c *Connection) handleIncoming() {
 	for incoming := range c.incoming {
 		if incoming == nil {

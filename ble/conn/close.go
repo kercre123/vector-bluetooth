@@ -5,6 +5,10 @@ func (c *Connection) Close() error {
 	c.connected.Disable()
 	c.encrypted.Disable()
 	c.established.Disable()
+	if c.stopNotify != nil {
+		c.stopNotify()
+		c.stopNotify = nil
+	}
 	c.connection.Disconnect()
 	return nil
 }

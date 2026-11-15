@@ -16,7 +16,6 @@ const (
 // DecryptMessage decrypts an incoming message
 func (b *BLECrypto) DecryptMessage(msg []byte) ([]byte, error) {
 	m := make([]byte, len(msg)-aBytes)
-	fmt.Println(msg)
 
 	exit := C.crypto_aead_xchacha20poly1305_ietf_decrypt(
 		(*C.uchar)(bytePointer(m)),

@@ -27,6 +27,7 @@ type Connection struct {
 	connected   lockState
 	encrypted   lockState
 	connParams  bluetooth.ConnectionParams
+	stopNotify  func()
 }
 
 // New returns a connection, or an error on failure
@@ -42,7 +43,7 @@ func New(output chan []byte) (*Connection, error) {
 	c := Connection{
 		device:      DefaultAdapter,
 		scanresults: newScan(),
-		incoming:    make(chan []byte),
+		incoming:    make(chan []byte, 512),
 		out:         output,
 		crypto:      blecrypto.New(),
 		connParams: bluetooth.ConnectionParams{
